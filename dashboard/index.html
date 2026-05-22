@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Bot-Hunter Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
+header{background:#1e293b;padding:20px 40px;border-bottom:2px solid #334155}
+header h1{color:#38bdf8;font-size:22px}
+header p{color:#94a3b8;font-size:12px;margin-top:4px}
+.container{max-width:1000px;margin:30px auto;padding:0 20px}
+.search{display:flex;gap:10px;margin-bottom:24px}
+.search input{flex:1;padding:12px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;font-size:15px}
+.search button{padding:12px 24px;background:#38bdf8;color:#0f172a;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:15px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+.card{background:#1e293b;border-radius:12px;padding:20px;border:1px solid #334155}
+.card h3{font-size:11px;color:#64748b;text-transform:uppercase;margin-bottom:10px}
+.card .val{font-size:28px;font-weight:bold}
+.BOT{color:#f87171}.SUSPECT{color:#fbbf24}.HUMAIN{color:#4ade80}
+.section{background:#1e293b;border-radius:12px;padding:20px;border:1px solid #334155;margin-bottom:20px}
+.section h3{font-size:12px;color:#64748b;text-transform:uppercase;margin-bottom:16px}
+.bar-row{display:flex;align-items:center;margin-bottom:12px;gap:10px}
+.bar-label{width:180px;font-size:13px;color:#cbd5e1}
+.bar-track{flex:1;background:#334155;border-radius:4px;height:10px}
+.bar-fill{height:10px;border-radius:4px;background:#38bdf8;transition:width 0.6s}
+.bar-val{width:60px;text-align:right;font-size:13px;color:#e2e8f0;font-weight:bold}
+.scores-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.score-box{background:#0f172a;border-radius:8px;padding:14px;text-align:center}
+.score-box .lbl{font-size:11px;color:#64748b;margin-bottom:6px}
+.score-box .num{font-size:22px;font-weight:bold;color:#38bdf8}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px;color:#64748b;font-size:11px;text-transform:uppercase;border-bottom:1px solid #334155}
+td{padding:10px;font-size:13px;border-bottom:1px solid #1a2744}
+.badge{padding:2px 10px;border-radius:20px;font-size:11px;font-weight:bold}
+.badge.BOT{background:#450a0a;color:#f87171}
+.badge.SUSPECT{background:#451a03;color:#fbbf24}
+.badge.HUMAIN{background:#052e16;color:#4ade80}
+.error{background:#450a0a;color:#f87171;padding:14px;border-radius:8px;margin-bottom:16px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>Bot-Hunter Dashboard</h1>
+  <p>Sentinelle Numerique - Groupe 5 - SUP'PTIC</p>
+</header>
+<div class="container">
+  <div class="search">
+    <input id="inp" type="text" placeholder="ID du profil (ex: bot123, humain456)" value="bot123">
+    <button onclick="analyser()">Analyser</button>
+  </div>
+  <div id="err" class="error hidden"></div>
+  <div id="res" class="hidden">
+    <div class="cards">
+      <div class="card">
+        <h3>Score de confiance bot</h3>
+        <div class="val" id="c-score">--</div>
+        <div style="margin-top:8px;background:#334155;border-radius:4px;height:8px">
+          <div id="c-bar" style="height:8px;border-radius:4px;background:#f87171;width:0%;transition:width 0.6s"></div>
+        </div>
+      </div>
+      <div class="card" style="text-align:center">
+        <h3>Classification</h3>
+        <div class="val" id="c-label" style="font-size:36px;margin-top:8px">--</div>
+      </div>
+      <div class="card">
+        <h3>Profil analyse</h3>
+        <div style="font-size:12px;color:#94a3b8;margin-top:8px;word-break:break-all" id="c-profil">--</div>
+      </div>
+    </div>
+    <div class="section">
+      <h3>Scores detailles</h3>
+      <div class="scores-grid">
+        <div class="score-box"><div class="lbl">Score Frequence</div><div class="num" id="s-freq">--</div></div>
+        <div class="score-box"><div class="lbl">Score Semantique</div><div class="num" id="s-sem">--</div></div>
+        <div class="score-box"><div class="lbl">Score Global</div><div class="num" id="s-glob">--</div></div>
+      </div>
+    </div>
+    <div class="section">
+      <h3>Preuves detectees</h3>
+      <div class="bar-row">
+        <span class="bar-label">Cadence (normalisee)</span>
+        <div class="bar-track"><div class="bar-fill" id="b-cad"></div></div>
+        <span class="bar-val" id="v-cad">--</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Ratio pics anormaux</span>
+        <div class="bar-track"><div class="bar-fill" id="b-pic"></div></div>
+        <span class="bar-val" id="v-pic">--</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Taux de repetition</span>
+        <div class="bar-track"><div class="bar-fill" id="b-rep"></div></div>
+        <span class="bar-val" id="v-rep">--</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Probabilite LLM</span>
+        <div class="bar-track"><div class="bar-fill" id="b-llm"></div></div>
+        <span class="bar-val" id="v-llm">--</span>
+      </div>
+    </div>
+    <div class="section">
+      <h3>Historique des analyses</h3>
+      <table>
+        <thead><tr><th>Profil ID</th><th>Freq.</th><th>Sem.</th><th>Global</th><th>Label</th><th>Date</th></tr></thead>
+        <tbody id="hist"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script>
+function pct(v){return (v*100).toFixed(1)+"%"}
+async function analyser(){
+  var id=document.getElementById("inp").value.trim();
+  if(!id)return;
+  document.getElementById("err").classList.add("hidden");
+  try{
+    await fetch("http://localhost:8002/profil/"+id);
+    var r=await fetch("http://localhost:8005/analyser/"+id);
+    if(!r.ok)throw new Error("Erreur analyse");
+    var d=await r.json();
+    afficher(d);
+    chargerHist();
+  }catch(e){
+    document.getElementById("err").textContent="Erreur: "+e.message+" - Verifiez que tous les services sont lances.";
+    document.getElementById("err").classList.remove("hidden");
+  }
+}
+function afficher(d){
+  document.getElementById("res").classList.remove("hidden");
+  var p=d.preuves,label=d.label;
+  var pct100=(d.score_global*100).toFixed(1)+"%";
+  document.getElementById("c-score").textContent=pct100;
+  document.getElementById("c-score").className="val "+label;
+  document.getElementById("c-bar").style.width=pct100;
+  document.getElementById("c-label").textContent=label;
+  document.getElementById("c-label").className="val "+label;
+  document.getElementById("c-profil").textContent=d.profil_id;
+  document.getElementById("s-freq").textContent=pct(d.score_frequence);
+  document.getElementById("s-sem").textContent=pct(d.score_semantique);
+  document.getElementById("s-glob").textContent=pct(d.score_global);
+  document.getElementById("s-glob").className="num "+label;
+  var cadNorm=Math.min(p.cadence_minutes/60,1);
+  document.getElementById("b-cad").style.width=(cadNorm*100)+"%";
+  document.getElementById("v-cad").textContent=p.cadence_minutes+" min";
+  document.getElementById("b-pic").style.width=(p.ratio_pics*100)+"%";
+  document.getElementById("v-pic").textContent=pct(p.ratio_pics);
+  document.getElementById("b-rep").style.width=(p.repetition_rate*100)+"%";
+  document.getElementById("v-rep").textContent=pct(p.repetition_rate);
+  document.getElementById("b-llm").style.width=(p.llm_probability*100)+"%";
+  document.getElementById("v-llm").textContent=pct(p.llm_probability);
+}
+async function chargerHist(){
+  try{
+    var r=await fetch("http://localhost:8005/historique");
+    var rows=await r.json();
+    document.getElementById("hist").innerHTML=rows.map(function(r){
+      return "<tr><td style='color:#94a3b8;font-size:11px'>"+r.profil_id.substring(0,12)+"...</td><td>"+(r.score_freq*100).toFixed(1)+"%</td><td>"+(r.score_sem*100).toFixed(1)+"%</td><td><b>"+(r.score_global*100).toFixed(1)+"%</b></td><td><span class='badge "+r.label+"'>"+r.label+"</span></td><td style='color:#64748b;font-size:11px'>"+r.date_analyse.substring(0,16)+"</td></tr>";
+    }).join("");
+  }catch(e){}
+}
+analyser();
+</script>
+</body>
+</html>
