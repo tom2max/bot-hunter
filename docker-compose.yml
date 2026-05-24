@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: bothunter_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: bothunter_user
+      POSTGRES_PASSWORD: bothunter_password
+      POSTGRES_DB: bothunter_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  redis:
+    image: redis:7-alpine
+    container_name: bothunter_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  mock_api:
+    build: ./mock_api
+    container_name: bothunter_mock_api
+    ports:
+      - "8000:8000"
+    restart: always
+
+  profil_service:
+    build: ./profil_service
+    container_name: bothunter_profil_service
+    ports:
+      - "8001:8001"
+    depends_on:
+      - postgres
+      - mock_api
+    env_file:
+      - .env
+    restart: always
+
+volumes:
+  postgres_data:
